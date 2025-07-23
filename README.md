@@ -1,48 +1,81 @@
-# PLC_with_SIMATICS7
+# Simple PI/PID Controllers for Siemens TIA Portal
 
-PLC Repository: Formal Documentation
-Welcome to this comprehensive repository dedicated to Programmable Logic Controllers (PLCs). This repository serves as a foundational resource, encompassing fundamental PLC programming principles, essential maintenance procedures, and advanced troubleshooting techniques, particularly concerning Modbus communication and Input/Output (I/O) current irregularities.
+## 📢 Overview
 
-Scope of Documentation
-This documentation systematically covers the following critical areas:
+This repository provides simple, custom-written PI and PID controller functions for Siemens TIA Portal (versions 14, 15, and newer), compatible with S7-1200 and S7-1500 series CPUs. These functions were developed out of a need for a more straightforward, accessible, and portable control solution than the standard Siemens libraries.
+---
 
-1. PLC Programming Methodologies
-Introduction to PLCs: A detailed exposition on the definition, operational mechanisms, and critical role of PLCs in industrial automation frameworks.
+## 🧐 The Problem
 
-PLC Programming Languages: An in-depth analysis of various PLC programming languages, including Ladder Diagram (LD), Function Block Diagram (FBD), Structured Text (ST), Instruction List (IL), and Sequential Function Chart (SFC), highlighting their respective applications and paradigms.
+As a control technology professional frequently working in the TIA Portal environment, I found the standard Siemens modules to be consistently unsatisfactory for my needs in pressure and temperature regulation. Key issues included:
 
-Illustrative Programming Examples: A collection of practical PLC programming examples demonstrating common industrial applications such as motor control systems, conveyor automation, and other relevant scenarios.
+* **Library Incompatibility**: Different CPU series often require different, incompatible libraries.
+* **No Simulation Support**: The inability to simulate controllers makes testing and debugging difficult.
+* **Closed Source**: The source code is inaccessible, preventing modification or deep understanding.
+* **High Complexity**: The learning curve is steep, requiring significant time to familiarize oneself with the functionalities.
+* **Lack of Portability**: Migrating solutions to other environments like Codesys is not feasible.
+* **Forced Integration**: Heavy integration within TIA Portal restricts flexible implementation.
+* **Trial and Error**: A significant amount of trial and error is often needed to get the controllers to function as desired.
+* **Rigid Structure**: Requires mandatory use of Cyclic OBs and Global DBs, preventing integration into more modular, private functions.
+* **Overwhelming Documentation**: Manuals often span thousands of pages, making it hard to find relevant information quickly.
 
-Common Programming Software: Information pertaining to prevalent software platforms utilized for PLC programming (e.g., Siemens TIA Portal, Rockwell Studio 5000, Schneider Unity Pro, etc.).
+---
 
-2. PLC Maintenance and Troubleshooting Procedures
-This section comprehensively addresses the practical aspects of PLC maintenance and methodologies for resolving operational issues, with a specific emphasis on Modbus communication protocols and I/O-related anomalies.
+## 💡 The Solution
 
-Fundamentals of Modbus Communication: An elucidation of the Modbus communication protocol (RTU and TCP/IP) and its integral function within automation systems.
+After failing to find a suitable alternative, I decided to create my own solution. I've rewritten core controller functions, drawing inspiration from the simplicity of the **OSCAT library**. The result is a set of lightweight, effective, and easy-to-understand PI and PID controllers that I have successfully used in my projects up to TIA Portal v20.
 
-Modbus-to-PLC Configuration: A step-by-step guide outlining the precise procedures for establishing and configuring Modbus communication between external devices and the PLC.
+My goal isn't to replace every other library but to give back to the community that has provided so much valuable open-source knowledge. These functions are proven to work reliably. Please feel free to use and adapt them.
 
-Modbus Troubleshooting Guidelines: Expert recommendations and strategies for diagnosing and rectifying Modbus communication issues, encompassing:
+---
 
-Physical connection discrepancies.
+## 🛠️ Usage Instructions
 
-Incompatible communication parameter settings (e.g., baud rate, parity, stop bits).
+The controller outputs a standard value ranging from **0 to 100**. For binary actuators (like a solenoid valve), you can use this output with a clock generator to achieve pulse width modulation (PWM).
 
-Addressing errors related to register or coil assignments.
+* The **PI controller** is designed for standalone operation and is ideal for applications like pressure regulation.
+* The **PID controller** builds on the PI controller by adding a derivative component, making it well-suited for temperature regulation.
 
-I/O Current Anomaly Resolution: In instances of irregularities in PLC Input/Output (I/O) current, this segment provides methodologies for accurate identification and effective remediation:
+**❗️ Important:** Always use the `ib_Reset` input to stop the controller if the regulation loop is interrupted (e.g., a pump is turned off). This action resets the integral component and prevents "integral windup," which can cause significant overshoot when the loop restarts.
 
-I/O Diagnostics: Procedures for assessing I/O status and identifying malfunctioning or defective I/O points.
+### Parameters
 
-Cabling and Connections: Emphasizing the criticality of correct cabling and secure connection integrity.
+| Parameter               | Type    | Description                                                                                                                                                    |
+| ----------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ir_Input`              | `REAL`  | **(Input)** The measured process value (e.g., current pressure or temperature).                                                                                |
+| `ir_Setpoint`           | `REAL`  | **(Input)** The desired target value for the process.                                                                                                          |
+| `ir_ProportionalGain`   | `REAL`  | **(Input)** The P-Gain. The error is multiplied by this factor. Higher values lead to a stronger and faster response.                                           |
+| `ir_IntegrationGain`    | `REAL`  | **(Input)** The I-Gain. Determines how quickly the integral component corrects for steady-state errors. A higher value results in a faster-changing integral. |
+| `ir_DerviateGain`       | `REAL`  | **(Input)** The D-Gain. Multiplies the rate of change of the error. A higher value results in a stronger differential response to sudden changes.              |
+| `ir_DerviateActionTime` | `REAL`  | **(Input)** The time (in seconds) until the differential response has halved. A higher value results in a longer-lasting differential effect.                  |
+| `ib_Reset`              | `BOOL`  | **(Input)** When `TRUE`, the integral is cleared, and the output is set to zero.                                                                               |
+| `or_Output`             | `REAL`  | **(Output)** The controller output value in percent (0-100).                                                                                                   |
 
-Voltage and Current Assessment: Ensuring the provision of appropriate power supply to I/O modules.
+**Note for Large Systems:** If your control system is extremely large or has very long cycle times, it is recommended to call the PI or PID module cyclically **every second**. This prevents the internal floating-point numbers used for time calculation from becoming too small, which could lead to calculation errors.
 
-Module Replacement Procedures: Comprehensive guidance for the systematic replacement of faulty I/O modules.
+---
 
-Sensor/Actuator Calibration: Highlighting the imperative of precise calibration for all devices interconnected with the I/O system.
+## ⚙️ Installation
 
-Contribution Guidelines
-Community contributions are highly encouraged and valued. Should you possess relevant programming examples, troubleshooting guides, or other pertinent materials concerning PLCs, we invite you to contribute. Please submit Pull Requests or open Issues for any detected anomalies or constructive suggestions.
+Installation is very simple:
 
-Thank you for your engagement with this repository. We trust that this resource will prove invaluable in your endeavors with PLC systems.
+1.  In your TIA Portal project tree, navigate to **External source files**.
+2.  Add the two provided `.scl` files to this folder.
+3.  Right-click on the source files and select **"Generate blocks from source"**. The functions will then be available in your project.
+
+---
+
+## ➡️ Porting to Other Systems
+
+Porting this logic to other PLC platforms like Step-7 Classic or Codesys is straightforward. The core control logic is as follows:
+
+```scl
+// Proportional Component
+#Controller_Response_Proportional := #ir_ProportionalGain * (#ir_Setpoint - #ir_Input);
+
+// Integral Component
+#Controller_Response_Integral += #ir_IntegrationGain * (#ir_Setpoint - #ir_Input) * #PastTime;
+
+// Derivative Component
+#Intermediate_value += (#ir_SetpointDiverence - #Intermediate_value) * #PastTime / #ir_DerivateActionTime;
+#or_Output := (#ir_SetpointDiverence - #Intermediate_value) * #ir_DerivateGain;
